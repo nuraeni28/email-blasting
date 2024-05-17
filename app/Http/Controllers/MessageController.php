@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\BlastEmail;
+use App\Jobs\SendEmailJob;
 use App\Models\Messages;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -30,8 +30,8 @@ class MessageController extends Controller
             // dd(Mail::to($email)->send(new BlastEmail($message)));
             // Send email
             try {
-                
-                Mail::to($email)->send(new BlastEmail($message));
+                dispatch(new SendEmailJob($message->id));
+            
             } catch (\Exception $e) {
                 $success = false;
                 $failedEmails[] = $email;
@@ -39,7 +39,7 @@ class MessageController extends Controller
 
             $messages[] = $message;
         }
-        // dd($success);
+       
     }
 
     if (!$success) {
