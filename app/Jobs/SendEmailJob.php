@@ -35,13 +35,12 @@ class SendEmailJob implements ShouldQueue
     {
         Log::info('Processing queue job: ' . $this->message);
 
-        // sent message priority high
+        // Sent high priority messages
         $highPriorityMessages = Messages::where('priority', 'high')->whereNull('status')->orderBy('created_at', 'asc')->get();
         foreach ($highPriorityMessages as $message) {
             try {
-                foreach ($message->email as $email) {
-                    Mail::to($email)->send(new BlastEmail($message));
-                }
+                // Send email
+                Mail::to($message->email)->send(new BlastEmail($message));
                 $this->updateMessageStatus($message);
                 Log::info('High priority message sent: ' . $message->id);
             } catch (\Exception $e) {
@@ -49,14 +48,12 @@ class SendEmailJob implements ShouldQueue
             }
         }
 
-        // Send low priority messages
+        // Sent low priority messages
         $lowPriorityMessages = Messages::where('priority', 'low')->whereNull('status')->orderBy('created_at', 'asc')->get();
-
         foreach ($lowPriorityMessages as $message) {
             try {
-                foreach ($message->email as $email) {
-                    Mail::to($email)->send(new BlastEmail($message));
-                }
+                // Send email
+                Mail::to($message->email)->send(new BlastEmail($message));
                 $this->updateMessageStatus($message);
                 Log::info('Low priority message sent: ' . $message->id);
             } catch (\Exception $e) {

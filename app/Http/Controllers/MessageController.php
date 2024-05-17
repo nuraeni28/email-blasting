@@ -10,51 +10,52 @@ use Illuminate\Support\Facades\Mail;
 class MessageController extends Controller
 {
     public function blastEmail(Request $request)
-{
-    $requestData = $request->json()->all();
-    $messages = [];
-    $success = true;
-    $failedEmails = [];
+    {
+        $requestData = $request->json()->all();
+        $messages = [];
+        $success = true;
+        $failedEmails = [];
 
-    foreach ($requestData as $data) {
-        $messageText = $data['message'];
-        $priority = $data['priority'];
-        $emails = $data['email'];
+        foreach ($requestData as $data) {
+            $messageText = $data['message'];
+            $priority = $data['priority'];
+            $emails = $data['email'];
 
-        foreach ($emails as $email) {
-            $message = new Messages();
-            $message->message = $messageText;
-            $message->email = $email;
-            $message->priority = $priority;
-            $message->save();
-            // dd(Mail::to($email)->send(new BlastEmail($message)));
-            // Send email
-            try {
-                dispatch(new SendEmailJob($message->id));
-            
-            } catch (\Exception $e) {
-                $success = false;
-                $failedEmails[] = $email;
+            foreach ($emails as $email) {
+                $message = new Messages();
+                $message->message = $messageText;
+                $message->email = $email;
+                $message->priority = $priority;
+                $message->save();
+                // dd(Mail::to($email)->send(new BlastEmail($message)));
+                // Send email
+                try {
+                    dispatch(new SendEmailJob($message->id));
+                } catch (\Exception $e) {
+                    $success = false;
+                    $failedEmails[] = $email;
+                }
+
+                $messages[] = $message;
             }
-
-            $messages[] = $message;
         }
-       
-    }
 
-    if (!$success) {
+        if (!$success) {
+            return response()->json(
+                [
+                    'message' => 'Some emails failed to send.',
+                    'success' => $success,
+                    'failed_emails' => $failedEmails,
+                    'data' => [],
+                ],
+                404,
+            );
+        }
+
         return response()->json([
-            'message' => 'Some emails failed to send.',
+            'message' => 'Emails sent successfully.',
             'success' => $success,
-            'failed_emails' => $failedEmails,
-            'data' => [],
-        ], 404);
+            'data' => $messages,
+        ]);
     }
-
-    return response()->json([
-        'message' => 'Emails sent successfully.',
-        'success' => $success,
-        'data' => $messages,
-    ]);
-}
 }
